@@ -10,10 +10,9 @@ from prompts.topics import TOPICS
 
 async def generate_answer(topic_key: str, TOPICS: dict) -> str:
     topic = TOPICS[topic_key]
-
     prompt = (
-        f"Ты ведущий квиза. Задай один интересный вопрос по теме: {topic['prompt_name']}. "
-        'Вопрос должен иметь четкий и однозначный ответ. '
+        f'Ты ведущий квиза. Задай один интересный вопрос по теме: {topic["prompt_name"]}. '
+        'Вопрос должен иметь четкий и однозначный ответ из одного слова. '
         'Напиши только сам вопрос, без нумерации и без ответа.'
     )
 

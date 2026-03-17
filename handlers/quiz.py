@@ -135,8 +135,8 @@ async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
 
     await state.clear()
     await callback.answer()
-    await callback.message.edit_reply_markup(reply_markup=None)
-
+    await callback.message.edit_reply_markup(reply_markup=None) # Убираем клавиатуру
+    # Формируем итоговое сообщение
     if total == 0:
         verdict = 'Fatality!!! Ты не ответил ни на один вопрос.'
     elif score == total:
@@ -148,16 +148,28 @@ async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
     else:
         verdict = 'Стоит подтянуть знания'
 
-    await callback.message.answer(
+    final_message = (
         '<b>Викторина завершена!</b>\n\n'
         f'Итого: <b>{score} из {total}</b>\n\n'
         f'{verdict}'
     )
-    # Возвращаем пользователя в меню выбора темы викторины
+    # Пытаемся отредактировать сообщение (если было фото с подписью)
+    try:
+        await callback.message.edit_caption(caption=final_message)
+    except Exception:
+        # Если подписи не было, редактируем текст
+        try:
+            await callback.message.edit_text(text=final_message)
+        except Exception:
+            # Если редактирование не удалось (например, сообщение слишком старое)
+            await callback.message.answer(final_message)
+
+    # Дополнительно отправляем сообщение с клавиатурой выбора тем для нового старта
     await callback.message.answer(
-        'Выбор темы викторины:',
+        'Хочешь сыграть ещё раз?',
         reply_markup=topics_keyboard(TOPICS)
     )
+
 
 
 @router.callback_query(F.data == 'quiz:cancel')
