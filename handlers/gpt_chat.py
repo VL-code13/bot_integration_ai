@@ -8,7 +8,7 @@ from states.state import GptStates
 from aiogram.enums import ChatAction
 from services.openai_service import ask_gpt
 from keyboards.inline import gpt_keyboard, main_menu
-from promts import GPT_SYSTEM_PROMT
+from prompts import GPT_SYSTEM_PROMT
 
 router = Router()
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ from states.state import TalkStates
 from aiogram.enums import ChatAction
 from services.openai_service import ask_gpt
 from keyboards.inline import  main_menu, persons_keyboard, talk_keyboard
-from promts.persons import PERSONS
+from prompts.persons import PERSONS
 
 router = Router()
 logger = logging.getLogger(__name__)

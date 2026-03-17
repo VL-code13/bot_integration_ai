@@ -7,7 +7,7 @@ from aiogram.enums import ChatAction
 from services.openai_service import ask_gpt
 from keyboards.inline import random_keyboard, main_menu
 
-from promts import RANDOM_FACT
+from prompts import RANDOM_FACT
 router = Router()
 logger = logging.getLogger(__name__)
 
@@ -42,20 +42,48 @@ async def send_random_fact(message: Message):
             'Произошла ошибка при получении факта.',
             reply_markup=random_keyboard()
         )
-
-
 @router.message(Command('random'))
 async def cmd_random(message: Message):
-    await send_random_fact(message)
+    try:
+        await send_random_fact(message)
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_random: {e}")
+        await message.answer(
+            "Произошла ошибка при получении факта. Попробуйте позже.",
+            reply_markup=main_menu()
+        )
 
 @router.callback_query(F.data == 'random:again')
 async def cmd_random_again(callback: CallbackQuery):
-    await callback.answer()
-    #await callback.message.delete()
-    await send_random_fact(callback.message)
+    try:
+        await callback.answer()  # Снимаем индикатор загрузки
+        await send_random_fact(callback.message)
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_random_again: {e}")
+        await callback.message.edit_text(
+            "Произошла ошибка при загрузке нового факта. Используйте /random для повтора.",
+            reply_markup=None
+        )
+        await callback.answer(
+            "Ошибка загрузки факта",
+            show_alert=True
+        )
 
 @router.callback_query(F.data == 'random:stop')
 async def cmd_random_stop(callback: CallbackQuery):
-    await callback.answer()
-    #await callback.message.delete()
-    await callback.message.answer('Выбери какой-то пункт',reply_markup=main_menu())
+    try:
+        await callback.answer()
+        await callback.message.delete()
+        await callback.message.answer(
+            'Выбери какой‑то пункт из меню:',
+            reply_markup=main_menu()
+        )
+        logger.info('Завершаем режим случайного факта.')
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_random_stop: {e}")
+        # Если не удалось удалить сообщение, просто отправляем новое
+        await callback.message.answer(
+            'Выбери какой‑то пункт из меню:',
+            reply_markup=main_menu()
+        )
+        await callback.answer("Ошибка при удалении сообщения", show_alert=True)
