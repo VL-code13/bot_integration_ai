@@ -1,5 +1,8 @@
-from .promt_random_fact import get_random_fact_prompt
-
+from .persons import PERSONS
+from .promt_random_fact import RANDOM_FACT
+from .gpt_promt import GPT_SYSTEM_PROMT
 __all__ = [
-    "get_random_fact_prompt"
+    "RANDOM_FACT",
+    "PERSONS",
+    "GPT_SYSTEM_PROMT"
 ]
