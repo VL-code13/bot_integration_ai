@@ -5,10 +5,11 @@ from aiogram.types import Message, CallbackQuery
 import logging
 
 from handlers.gpt_chat import cmd_gpt
+from handlers.quiz import cmd_quiz
 from handlers.talk import cmd_talk
 from keyboards.inline import main_menu
 from handlers.random_fact_handler import send_random_fact
-from states.state import GptStates
+
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -77,20 +78,11 @@ async def on_menu_talk(callback: CallbackQuery,state:FSMContext):
         await callback.answer("Произошла ошибка.", show_alert=True)
 
 @router.callback_query(F.data == 'menu:quiz')
-async def on_menu_quiz(callback: CallbackQuery):
+async def on_menu_quiz(callback: CallbackQuery, state:FSMContext):
     try:
-        await callback.answer()
-        await callback.message.answer()
+        await callback.answer() #Чтобы убрать загрузку с кнопки
+        await cmd_quiz(callback.message,state)
     except Exception as e:
         logger.error(f"Ошибка в on_menu_quiz: {e}")
         await callback.answer("Произошла ошибка.", show_alert=True)
 
-'''
-@router.callback_query(F.data == 'menu:talk')
-async def on_menu_talk(callback: CallbackQuery):
-    await callback.answer() #Чтобы убрать загрузку с кнопки
-
-@router.callback_query(F.data == 'menu:quiz')
-async def on_menu_quiz(callback: CallbackQuery):
-    await callback.answer() #Чтобы убрать загрузку с кнопки
-'''

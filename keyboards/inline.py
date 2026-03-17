@@ -1,7 +1,8 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
+from prompts import TOPICS
 
 def main_menu() -> InlineKeyboardMarkup:
+    '''Клавиатура главного меню'''
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='🎲 Случайный факт', callback_data='menu:random', style='primary')],
@@ -14,6 +15,7 @@ def main_menu() -> InlineKeyboardMarkup:
 
 
 def random_keyboard() -> InlineKeyboardMarkup:
+    '''Клавиатура для случайного факта'''
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='🎲 Хочу еще факт', callback_data='random:again')],
@@ -23,6 +25,7 @@ def random_keyboard() -> InlineKeyboardMarkup:
 
 
 def gpt_keyboard() -> InlineKeyboardMarkup:
+    '''Клавиатура диалога с Chat GPT'''
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='📛Закончить', callback_data='gpt:stop', style='danger')]
@@ -31,6 +34,7 @@ def gpt_keyboard() -> InlineKeyboardMarkup:
 
 
 def persons_keyboard(persons):
+    '''Клавиатура выбора известной личности'''
     buttons = [
         [InlineKeyboardButton(text=f'{data["emoji"]} {data["name"]}', callback_data=f'talk:person:{key}')]
         for key, data in persons.items()
@@ -42,6 +46,7 @@ def persons_keyboard(persons):
 
 
 def talk_keyboard():
+    '''Клавиатура во время диалога с известной личностью'''
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='🔄 Сменить собеседника', callback_data='talk:change')],
@@ -51,9 +56,10 @@ def talk_keyboard():
 
 
 def topics_keyboard(topics: dict) -> InlineKeyboardMarkup:
+    '''Клавиатура выбора тем викторины'''
     buttons = [
-        [InlineKeyboardButton(text=data['name'], callback_data=f'quiz:topic:{key}')]
-        for key, data in topics.items()
+        [InlineKeyboardButton(text=topic['name'], callback_data=f'quiz:topic:{key}')]
+        for key, topic in topics.items()
     ]
     buttons.append(
         [InlineKeyboardButton(text='⛔️ Отмена', callback_data='quiz:cancel', style='danger')]
@@ -61,7 +67,8 @@ def topics_keyboard(topics: dict) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def after_answer_keyboard() -> InlineKeyboardMarkup:
+def get_quiz_actions_keyboard() -> InlineKeyboardMarkup:
+    '''Клавиатура действия во время викторины'''
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='▶️ Следующий вопрос', callback_data=f'quiz:next', style='success')],
