@@ -7,11 +7,12 @@ from aiogram.fsm.context import FSMContext
 from states.state import TalkStates
 from aiogram.enums import ChatAction
 from services.openai_service import ask_gpt
-from keyboards.inline import  main_menu, persons_keyboard, talk_keyboard
-from prompts.persons import PERSONS
+from keyboards.inline import persons_keyboard, talk_keyboard, main_menu
+from prompts.persons_prompt import PERSONS
 
 router = Router()
 logger = logging.getLogger(__name__)
+
 
 @router.message(Command('talk'))
 async def cmd_talk(message: Message, state: FSMContext):
@@ -21,14 +22,15 @@ async def cmd_talk(message: Message, state: FSMContext):
         photo = FSInputFile('images/talk.png')
         await message.answer_photo(photo=photo,
                                    caption=(
-                                       '<b>Диалог с известной лисночтью</b>\n\nВыбери с кем хочешь поговорить:'
-                                   ),reply_markup=persons_keyboard(PERSONS), parse_mode='html')
+                                       '<b>Диалог с известной личностью</b>\n\nВыбери с кем хочешь поговорить:'
+                                   ), reply_markup=persons_keyboard(PERSONS), parse_mode='html')
     except Exception as e:
-        await message.answer(text='<b>Диалог с известной лисночтью</b>\n\nВыбери с кем хочешь поговорить:',reply_markup=persons_keyboard(PERSONS))
+        await message.answer(text='<b>Диалог с известной личностью</b>\n\nВыбери с кем хочешь поговорить:',
+                             reply_markup=persons_keyboard(PERSONS))
 
 
 @router.callback_query(TalkStates.choosing_person, F.data.startswith('talk:person:'))
-async def on_person_choosen(callback: CallbackQuery, state: FSMContext):
+async def talking_with_person(callback: CallbackQuery, state: FSMContext):
     person_key = callback.data.split(':')[-1]
 
     if person_key not in PERSONS:
@@ -37,7 +39,7 @@ async def on_person_choosen(callback: CallbackQuery, state: FSMContext):
 
     person = PERSONS[person_key]
 
-    await state.update_data(person_key = person_key, history = [])
+    await state.update_data(person_key=person_key, history=[])
     await state.set_state(TalkStates.chatting)
 
     await callback.answer(f'Начинаем разговор с {person["name"]}')
@@ -47,6 +49,42 @@ async def on_person_choosen(callback: CallbackQuery, state: FSMContext):
                  "Напишите что-нибудь - и получите ответ в его стиле"
                  ), reply_markup=talk_keyboard(), parse_mode='html'
     )
+
+
+@router.callback_query(TalkStates.chatting, F.data.startswith('talk:change'))
+async def change_person(callback: CallbackQuery, state: FSMContext):
+    await cmd_talk(callback.message, state)
+    await callback.answer()
+
+
+@router.callback_query(TalkStates.chatting, F.data=='talk:stop')
+async def stop_talking(callback: CallbackQuery, state: FSMContext):
+    try:
+        await state.clear()
+        await callback.answer('Выхожу из режима "Диалог с известной личностью"',
+                              reply_markup=main_menu())
+        await callback.message.answer(
+            text='Вышел из режима диалога с личностью.\n🔱Выбери какой‑то пункт из меню:',
+            reply_markup=main_menu()
+        )
+        logger.info('Режим "Диалог с известной личностью" успешно завершён.')
+    except Exception as e:
+        logger.error(f'Критическая ошибка в stop_talking: {e}')
+        try:
+            await callback.message.answer(
+                'Выбери какой‑то пункт из меню:',
+                reply_markup=main_menu()
+            )
+            await callback.answer('Ошибка при завершении режима "Диалог с известной личностью" ', show_alert=True)
+        except Exception as fallback_error:
+            logger.critical(f'Критическая ошибка при отправке fallback‑сообщения: {fallback_error}')
+            await callback.answer(
+                'Произошла критическая ошибка. Используйте /start для возврата в меню.',
+                show_alert=True
+            )
+@router.callback_query(TalkStates.choosing_person, F.data=='talk:cancel')
+async def cancel_talk(callback: CallbackQuery, state: FSMContext):
+    await stop_talking(callback,state)
 
 
 @router.message(TalkStates.chatting, F.text)
@@ -82,5 +120,6 @@ async def cmd_talk_message(message: Message, state: FSMContext):
     await state.update_data(history=history)
 
     await message.answer(
-        f'{person["emoji"]} <b>{escape(person["name"])}</b>\n\n{escape(response)}'
+        f'{person["emoji"]} <b>{escape(person["name"])}</b>\n\n{escape(response)}',
+        reply_markup=talk_keyboard()
     )

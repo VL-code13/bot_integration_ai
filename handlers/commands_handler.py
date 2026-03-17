@@ -5,6 +5,7 @@ from aiogram.types import Message, CallbackQuery
 import logging
 
 from handlers.gpt_chat import cmd_gpt
+from handlers.talk import cmd_talk
 from keyboards.inline import main_menu
 from handlers.random_fact_handler import send_random_fact
 from states.state import GptStates
@@ -67,10 +68,10 @@ async def on_menu_gpt(callback: CallbackQuery, state: FSMContext):
         )
 
 @router.callback_query(F.data == 'menu:talk')
-async def on_menu_talk(callback: CallbackQuery):
+async def on_menu_talk(callback: CallbackQuery,state:FSMContext):
     try:
         await callback.answer()
-        await callback.message.answer()
+        await cmd_talk(callback.message,state)
     except Exception as e:
         logger.error(f"Ошибка в on_menu_talk: {e}")
         await callback.answer("Произошла ошибка.", show_alert=True)
