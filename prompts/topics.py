@@ -1,7 +1,7 @@
 TOPICS = {
     'science': {
         'name': '🔭 Наука',
-        'prompt_name': "науке и открытыях"
+        'prompt_name': "науке и открытиях"
     },
     'history': {
         'name': "📜 История",

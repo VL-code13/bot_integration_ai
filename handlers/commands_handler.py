@@ -36,7 +36,7 @@ async def cmd_help(message: Message):
             '/random - Случайный факт\n'
             '/gpt - Диалог с ChatGPT\n'
             '/talk - Диалог с известной личностью\n'
-            '/help - Это сообщение',
+            '/quiz - Викторина с подсчетом баллов\n',
             parse_mode='html'
         )
     except Exception as e:

@@ -5,7 +5,7 @@ from aiogram.enums import ChatAction
 from services.openai_service import ask_gpt
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
-from data.topics import TOPICS
+from prompts.topics import TOPICS
 
 
 async def generate_answer(topic_key: str, TOPICS: dict) -> str:

@@ -6,10 +6,8 @@ from aiogram.enums import ChatAction
 from aiogram.types import Message, FSInputFile, CallbackQuery
 from states.state import QuizStates
 from keyboards.inline import topics_keyboard, after_answer_keyboard
-
-from services.openai_service import ask_gpt
 from utils.quiz_generate import send_next_question, check_answer
-from data.topics import TOPICS
+from prompts.topics import TOPICS
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -23,12 +21,12 @@ async def cmd_quiz(message: Message, state: FSMContext):
     try:
         photo = FSInputFile('images/quiz.png')
         await message.answer_photo(photo=photo, caption=(
-            '<b>Квиз с ChatGPT</b>\n'
+            '<b>Викторина с chatGPT</b>\n'
             'Выбери тему - и погнали'
         )
         , reply_markup=topics_keyboard(topics=TOPICS))
     except Exception:
-        await message.answer('<b>Квиз с ChatGPT</b>\nВыбери тему - и погнали')
+        await message.answer('<b>Викторина  с ChatGPT</b>\nВыбери тему - и погнали')
 
 
 @router.callback_query(QuizStates.choosing_topic, F.data.startswith('quiz:topic:'))
@@ -36,7 +34,7 @@ async def on_topic_choosen(callback: CallbackQuery, state: FSMContext):
     topic_key = callback.data.split(':')[-1]
 
     if topic_key not in TOPICS:
-        await callback.answer('Неизвесетная тема')
+        await callback.answer('Неизвестная тема')
         return
 
     topic = TOPICS[topic_key]
@@ -128,18 +126,18 @@ async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_reply_markup(reply_markup=None)
 
     if total == 0:
-        verdict = 'Ты не ответил ни на один вопрос'
+        verdict = 'Fatality!!! Ты не ответил ни на один вопрос.'
     elif score == total:
         verdict = 'Идеальный результат'
     elif score / total>= 0.75:
-        verdict = 'Отличнй результат'
+        verdict = 'Отличный результат'
     elif score / total >= 0.4:
         verdict = 'Неплохо, есть куда расти!'
     else:
         verdict = 'Стоит подтянуть знания'
 
     await callback.message.answer(
-        '<b>Квиз завершен!</b>\n\n'
+        '<b>Викторина завершена!</b>\n\n'
         f'Итого: <b>{score} из {total}</b>\n\n'
         f'{verdict}'
     )
@@ -151,9 +149,9 @@ async def on_quiz_cancel(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
     try:
-        await callback.message.edit_caption(caption='Квиз отменен')
+        await callback.message.edit_caption(caption='Викторина отменена')
     except Exception:
-        await callback.message.edit_text('Квиз отменен')
+        await callback.message.edit_text('Викторина отменена')
 
 
 
