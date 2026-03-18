@@ -1,4 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 from prompts import TOPICS
 
 def main_menu() -> InlineKeyboardMarkup:
@@ -9,6 +11,7 @@ def main_menu() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text='🤖 Chat GPT', callback_data='menu:gpt', style='primary')],
             [InlineKeyboardButton(text='🗣️ Диалог с личностью', callback_data='menu:talk', style='primary')],
             [InlineKeyboardButton(text='🎯 Викторина', callback_data='menu:quiz', style='primary')],
+            [InlineKeyboardButton(text='🆎 Словарный тренажер', callback_data='menu:vocab', style='primary')],
         ]
     )
     return keyboard
@@ -76,3 +79,17 @@ def get_quiz_actions_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text='🛑 Закончить викторину', callback_data=f'quiz:stop', style='danger')],
         ]
     )
+
+
+def vocab_actions_keyboard(has_words: bool = False) -> InlineKeyboardMarkup:
+    """
+    Клавиатура действий словарного тренажёра.
+    Кнопка 'Тренироваться' появляется только если есть хотя бы одно слово.
+    """
+    builder = InlineKeyboardBuilder()
+    builder.button(text='📖 Ещё слово', callback_data='vocab:next', style='success')
+    if has_words:
+        builder.button(text='🎯 Тренироваться', callback_data='vocab:train', style='primary')
+    builder.button(text='❌ Закончить', callback_data='vocab:stop', style='danger')
+    builder.adjust(1)
+    return builder.as_markup()

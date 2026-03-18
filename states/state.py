@@ -13,3 +13,7 @@ class TalkStates(StatesGroup):
 class QuizStates(StatesGroup):
     choosing_topic = State()
     answering = State()
+
+class VocabStates(StatesGroup):
+    learning = State()   # режим изучения слов
+    training = State()   # режим тренировки
