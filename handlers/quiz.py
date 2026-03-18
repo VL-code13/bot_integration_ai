@@ -19,17 +19,20 @@ async def cmd_quiz(message: Message, state: FSMContext):
     await state.set_state(QuizStates.choosing_topic)
     try:
         photo = FSInputFile('images/quiz.png')
-        await message.answer_photo(photo=photo, caption=(
-            '<b>Викторина с chatGPT</b>\n'
-            'Выбери тему - и погнали'
-        ),
-        reply_markup=topics_keyboard(topics=TOPICS)
-    )
+        await message.answer_photo(
+            photo=photo,
+            caption=(
+                '<b>Викторина с chatGPT</b>\n'
+                'Выбери тему - и погнали'
+            ),
+            reply_markup=topics_keyboard(topics=TOPICS)
+        )
     except Exception as e:
         logger.error(f"Ошибка загрузки изображения: {e}")
-        await message.answer('<b>Викторина  с ChatGPT</b>\nВыбери тему - и погнали',
-                             reply_markup=topics_keyboard(topics=TOPICS)
-                             )
+        await message.answer(
+            '<b>Викторина с ChatGPT</b>\nВыбери тему - и погнали',
+            reply_markup=topics_keyboard(topics=TOPICS)
+        )
 
 
 @router.callback_query(QuizStates.choosing_topic, F.data.startswith('quiz:topic:'))
@@ -51,12 +54,20 @@ async def on_topic_chosen(callback: CallbackQuery, state: FSMContext):
         current_question=''
     )
     await state.set_state(QuizStates.answering)
-
     await callback.answer(f'Тема {topic["name"]}')
 
-    await callback.message.edit_caption(
-        caption=f'{topic["name"]} - отличный выбор! Генерирую вопрос'
-    )
+
+    try:
+        await callback.message.edit_caption(
+            caption=f'{topic["name"]} - отличный выбор! Генерирую вопрос'
+        )
+    except Exception:
+        try:
+            await callback.message.edit_text(
+                text=f'{topic["name"]} - отличный выбор! Генерирую вопрос'
+            )
+        except Exception as e:
+            logger.error(f"Ошибка редактирования сообщения: {e}")
 
     await send_next_question(callback.message, state, topic_key)
 
@@ -70,7 +81,7 @@ async def cmd_answer(message: Message, state: FSMContext):
     total = data.get('total', 0)
 
     if not current_question:
-        await message.answer('Что то пошло не так. Начни заново /quiz')
+        await message.answer('Что-то пошло не так. Начни заново /quiz')
         await state.clear()
         return
 
@@ -81,6 +92,7 @@ async def cmd_answer(message: Message, state: FSMContext):
 
     is_correct, explanation = await check_answer(current_question, message.text)
     new_total = total + 1
+
     if is_correct:
         result_header = '✅ <b>Верно!</b>'
         new_score = score + 1
@@ -97,7 +109,7 @@ async def cmd_answer(message: Message, state: FSMContext):
     )
 
 
-@router.callback_query(F.data == 'quiz:next')
+@router.callback_query(QuizStates.answering, F.data == 'quiz:next')
 async def on_quiz_next(callback: CallbackQuery, state: FSMContext):
     '''Выбор следующего вопроса из выбранной темы'''
     await callback.answer()
@@ -111,31 +123,32 @@ async def on_quiz_next(callback: CallbackQuery, state: FSMContext):
         await state.clear()
 
 
-@router.callback_query(F.data == 'quiz:change_topic')
+@router.callback_query(QuizStates.answering, F.data == 'quiz:change_topic')
 async def on_quiz_change_topic(callback: CallbackQuery, state: FSMContext):
     '''Обработка смены темы викторины'''
-    await state.set_state(QuizStates.choosing_topic)
-    await state.update_data(score=0, total=0, current_question='')
-
     await callback.answer()
     await callback.message.edit_reply_markup(reply_markup=None)
 
+    # Сбрасываем счёт и устанавливаем состояние выбора темы
+    await state.set_state(QuizStates.choosing_topic)
+    await state.update_data(score=0, total=0, current_question='')
+
     await callback.message.answer(
-        'Выбери новую тему',
+        'Выбери новую тему:',
         reply_markup=topics_keyboard(TOPICS)
     )
 
 
-@router.callback_query(F.data == 'quiz:stop')
+@router.callback_query(QuizStates.answering, F.data == 'quiz:stop')
 async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
     '''Обработка нажатия "закончить викторину" в процессе викторины'''
     data = await state.get_data()
     score = data.get('score', 0)
     total = data.get('total', 0)
 
-    await state.clear()
     await callback.answer()
-    await callback.message.edit_reply_markup(reply_markup=None) # Убираем клавиатуру
+    await callback.message.edit_reply_markup(reply_markup=None)
+
     # Формируем итоговое сообщение
     if total == 0:
         verdict = 'Fatality!!! Ты не ответил ни на один вопрос.'
@@ -153,26 +166,27 @@ async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
         f'Итого: <b>{score} из {total}</b>\n\n'
         f'{verdict}'
     )
-    # Пытаемся отредактировать сообщение (если было фото с подписью)
+
     try:
         await callback.message.edit_caption(caption=final_message)
     except Exception:
-        # Если подписи не было, редактируем текст
         try:
             await callback.message.edit_text(text=final_message)
         except Exception:
-            # Если редактирование не удалось (например, сообщение слишком старое)
             await callback.message.answer(final_message)
 
-    # Дополнительно отправляем сообщение с клавиатурой выбора тем для нового старта
+    # ИСПРАВЛЕНИЕ 1: вместо state.clear() устанавливаем choosing_topic,
+    # иначе on_topic_chosen не сработает (требует QuizStates.choosing_topic)
+    await state.set_state(QuizStates.choosing_topic)
+    await state.update_data(score=0, total=0, current_question='')
+
     await callback.message.answer(
         'Хочешь сыграть ещё раз?',
         reply_markup=topics_keyboard(TOPICS)
     )
 
 
-
-@router.callback_query(F.data == 'quiz:cancel')
+@router.callback_query(QuizStates.choosing_topic, F.data == 'quiz:cancel')
 async def on_quiz_cancel(callback: CallbackQuery, state: FSMContext):
     '''Обработка нажатия "отмена" при выборе тем викторины'''
     await state.clear()
@@ -182,7 +196,7 @@ async def on_quiz_cancel(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_caption(caption='Викторина отменена')
     except Exception:
         await callback.message.edit_text('Викторина отменена')
-    # Возвращаем пользователя в главное меню
+
     await callback.message.answer(
         'Главное меню:',
         reply_markup=main_menu()
