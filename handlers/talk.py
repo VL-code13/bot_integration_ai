@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 @router.message(Command('talk'))
 async def cmd_talk(message: Message, state: FSMContext):
+    """Обрабатывает запуск диалога с известной личностью"""
     await state.set_state(TalkStates.choosing_person)
 
     try:
@@ -31,6 +32,7 @@ async def cmd_talk(message: Message, state: FSMContext):
 
 @router.callback_query(TalkStates.choosing_person, F.data.startswith('talk:person:'))
 async def talking_with_person(callback: CallbackQuery, state: FSMContext):
+    """Реализует разговор с выбранной личностью"""
     person_key = callback.data.split(':')[-1]
 
     if person_key not in PERSONS:
@@ -53,12 +55,14 @@ async def talking_with_person(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(TalkStates.chatting, F.data.startswith('talk:change'))
 async def change_person(callback: CallbackQuery, state: FSMContext):
+    """Реализует смену известной личности в диалоге"""
     await cmd_talk(callback.message, state)
     await callback.answer()
 
 
 @router.callback_query(TalkStates.chatting, F.data=='talk:stop')
 async def stop_talking(callback: CallbackQuery, state: FSMContext):
+    """Реализует завершение диалога с известной личностью"""
     try:
         await state.clear()
         await callback.answer('Выхожу из режима "Диалог с известной личностью"',
@@ -84,11 +88,13 @@ async def stop_talking(callback: CallbackQuery, state: FSMContext):
             )
 @router.callback_query(TalkStates.choosing_person, F.data=='talk:cancel')
 async def cancel_talk(callback: CallbackQuery, state: FSMContext):
+    """Реализует отмену диалога"""
     await stop_talking(callback,state)
 
 
 @router.message(TalkStates.chatting, F.text)
 async def cmd_talk_message(message: Message, state: FSMContext):
+    """Реализует разговор с личностью"""
     data = await state.get_data()
     person_key = data['person_key']
     history = data.get('history', [])

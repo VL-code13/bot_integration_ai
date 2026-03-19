@@ -34,9 +34,9 @@ logger = logging.getLogger(__name__)
 _ANY_RESUME_STATE = StateFilter(ResumeStates)
 
 
-# ---------------------------------------------------------------------------
+
 # Вспомогательные функции
-# ---------------------------------------------------------------------------
+
 
 def _build_resume_prompt(data: dict[str, Any]) -> str:
     """
@@ -365,7 +365,7 @@ async def handle_restart(
         await callback.answer('❌ Ошибка перезапуска.', show_alert=True)
 
 
-# ✅ ИСПРАВЛЕНО: явный StateFilter(ResumeStates) вместо голого ResumeStates
+#  явный StateFilter(ResumeStates)
 @router.callback_query(
     _ANY_RESUME_STATE,
     F.data == 'resume:cancel'
@@ -396,9 +396,9 @@ async def handle_cancel(
         await callback.answer('❌ Ошибка при отмене.', show_alert=True)
 
 
-# ---------------------------------------------------------------------------
+
 # Заглушка для нетекстовых сообщений
-# ---------------------------------------------------------------------------
+
 
 # StateFilter(ResumeStates) — все состояния группы, кроме showing_result
 # (там пользователь уже не вводит текст)

@@ -7,6 +7,9 @@ from handlers.quiz import router as quiz_router
 from handlers.vocab_handler import router as vocab_router
 from handlers.resume_handler import router as resume_router
 
+
+# Создаём основной роутер приложения — точка агрегации всех обработчиков
 router = Router()
 
+# Подключаем все роутеры к основному.
 router.include_routers(commands_router, random_fact_router, gpt_router, talk_router, quiz_router, vocab_router,resume_router)

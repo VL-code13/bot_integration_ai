@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @router.message(Command('quiz'))
 async def cmd_quiz(message: Message, state: FSMContext):
-    '''Обработка команды /quiz'''
+    """Обработка команды /quiz"""
     await state.set_state(QuizStates.choosing_topic)
     try:
         photo = FSInputFile('images/quiz.png')
@@ -37,7 +37,7 @@ async def cmd_quiz(message: Message, state: FSMContext):
 
 @router.callback_query(QuizStates.choosing_topic, F.data.startswith('quiz:topic:'))
 async def on_topic_chosen(callback: CallbackQuery, state: FSMContext):
-    '''Обработка выбора темы'''
+    """Обработка выбора темы"""
     topic_key = callback.data.split(':')[-1]
 
     if topic_key not in TOPICS:
@@ -56,7 +56,6 @@ async def on_topic_chosen(callback: CallbackQuery, state: FSMContext):
     await state.set_state(QuizStates.answering)
     await callback.answer(f'Тема {topic["name"]}')
 
-
     try:
         await callback.message.edit_caption(
             caption=f'{topic["name"]} - отличный выбор! Генерирую вопрос'
@@ -74,7 +73,7 @@ async def on_topic_chosen(callback: CallbackQuery, state: FSMContext):
 
 @router.message(QuizStates.answering, F.text)
 async def cmd_answer(message: Message, state: FSMContext):
-    '''Обработка ответа пользователя'''
+    """Обработка ответа пользователя"""
     data = await state.get_data()
     current_question = data.get('current_question', '')
     score = data.get('score', 0)
@@ -111,7 +110,7 @@ async def cmd_answer(message: Message, state: FSMContext):
 
 @router.callback_query(QuizStates.answering, F.data == 'quiz:next')
 async def on_quiz_next(callback: CallbackQuery, state: FSMContext):
-    '''Выбор следующего вопроса из выбранной темы'''
+    """Выбор следующего вопроса из выбранной темы"""
     await callback.answer()
     await callback.message.edit_reply_markup(reply_markup=None)
     data = await state.get_data()
@@ -125,7 +124,7 @@ async def on_quiz_next(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(QuizStates.answering, F.data == 'quiz:change_topic')
 async def on_quiz_change_topic(callback: CallbackQuery, state: FSMContext):
-    '''Обработка смены темы викторины'''
+    """Обработка смены темы викторины"""
     await callback.answer()
     await callback.message.edit_reply_markup(reply_markup=None)
 
@@ -141,7 +140,7 @@ async def on_quiz_change_topic(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(QuizStates.answering, F.data == 'quiz:stop')
 async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
-    '''Обработка нажатия "закончить викторину" в процессе викторины'''
+    """Обработка нажатия "закончить викторину" в процессе викторины"""
     data = await state.get_data()
     score = data.get('score', 0)
     total = data.get('total', 0)
@@ -174,9 +173,6 @@ async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
             await callback.message.edit_text(text=final_message)
         except Exception:
             await callback.message.answer(final_message)
-
-    # ИСПРАВЛЕНИЕ 1: вместо state.clear() устанавливаем choosing_topic,
-    # иначе on_topic_chosen не сработает (требует QuizStates.choosing_topic)
     await state.set_state(QuizStates.choosing_topic)
     await state.update_data(score=0, total=0, current_question='')
 
@@ -188,7 +184,7 @@ async def on_quiz_stop(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(QuizStates.choosing_topic, F.data == 'quiz:cancel')
 async def on_quiz_cancel(callback: CallbackQuery, state: FSMContext):
-    '''Обработка нажатия "отмена" при выборе тем викторины'''
+    """Обработка нажатия "отмена" при выборе тем викторины"""
     await state.clear()
     await callback.answer()
 

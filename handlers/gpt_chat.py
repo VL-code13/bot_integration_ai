@@ -1,4 +1,3 @@
-import base64
 import logging
 from html import escape
 
@@ -14,17 +13,19 @@ from aiogram.types import (
 
 from keyboards.inline import gpt_keyboard, main_menu
 from prompts import GPT_SYSTEM_PROMT
-from services.openai_service import ask_gpt, ask_gpt_vision
+from services.openai_service import (
+    ask_gpt, ask_gpt_vision,
+    update_history,
+    download_photo_as_base64,
+    get_unsupported_type_name
+)
 from states.state import GptStates
 
 router = Router()
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Запуск режима GPT
-# ---------------------------------------------------------------------------
-
 @router.message(Command('gpt'))
 async def cmd_gpt(message: Message, state: FSMContext) -> None:
     """
@@ -66,11 +67,7 @@ async def cmd_gpt(message: Message, state: FSMContext) -> None:
         )
 
 
-
-# ---------------------------------------------------------------------------
 # Обработка текста
-# ---------------------------------------------------------------------------
-
 @router.message(GptStates.chatting, F.text)
 async def handle_text(message: Message, state: FSMContext) -> None:
     """
@@ -92,7 +89,7 @@ async def handle_text(message: Message, state: FSMContext) -> None:
             history=history
         )
 
-        await _update_history(state, message.text, response)
+        await update_history(state, message.text, response)
         await message.answer(escape(response), reply_markup=gpt_keyboard())
 
     except Exception as e:
@@ -103,10 +100,7 @@ async def handle_text(message: Message, state: FSMContext) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
 # Обработка фото
-# ---------------------------------------------------------------------------
-
 @router.message(GptStates.chatting, F.photo)
 async def handle_photo(message: Message, state: FSMContext) -> None:
     """
@@ -120,7 +114,7 @@ async def handle_photo(message: Message, state: FSMContext) -> None:
             action=ChatAction.TYPING
         )
 
-        image_base64 = await _download_photo_as_base64(message)
+        image_base64 = await download_photo_as_base64(message)
         if not image_base64:
             await message.answer(
                 '❌ Не удалось загрузить изображение. Попробуйте ещё раз.',
@@ -142,7 +136,7 @@ async def handle_photo(message: Message, state: FSMContext) -> None:
             history=history
         )
 
-        await _update_history(state, f'[Изображение] {user_text}', response)
+        await update_history(state, f'[Изображение] {user_text}', response)
         await message.answer(escape(response), reply_markup=gpt_keyboard())
 
     except Exception as e:
@@ -153,10 +147,7 @@ async def handle_photo(message: Message, state: FSMContext) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
 # Обработка стикеров
-# ---------------------------------------------------------------------------
-
 @router.message(GptStates.chatting, F.sticker)
 async def handle_sticker(message: Message, state: FSMContext) -> None:
     """
@@ -182,7 +173,7 @@ async def handle_sticker(message: Message, state: FSMContext) -> None:
             history=history
         )
 
-        await _update_history(state, f'[Стикер {emoji}]', response)
+        await update_history(state, f'[Стикер {emoji}]', response)
         await message.answer(escape(response), reply_markup=gpt_keyboard())
 
     except Exception as e:
@@ -193,10 +184,7 @@ async def handle_sticker(message: Message, state: FSMContext) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
 # Заглушка для неподдерживаемых типов
-# ---------------------------------------------------------------------------
-
 @router.message(GptStates.chatting)
 async def handle_unsupported(message: Message, state: FSMContext) -> None:
     """
@@ -204,7 +192,7 @@ async def handle_unsupported(message: Message, state: FSMContext) -> None:
     (голос, видео, документы, геолокация и т.д.).
     Уведомляет пользователя и не передаёт ничего в ChatGPT.
     """
-    content_name = _get_unsupported_type_name(message)
+    content_name = get_unsupported_type_name(message)
     logger.info(
         f'Пользователь {message.from_user.id} отправил '
         f'неподдерживаемый тип: {message.content_type}'
@@ -217,10 +205,7 @@ async def handle_unsupported(message: Message, state: FSMContext) -> None:
     )
 
 
-# ---------------------------------------------------------------------------
 # Завершение режима GPT
-# ---------------------------------------------------------------------------
-
 @router.callback_query(F.data == 'gpt:stop')
 async def on_gpt_stop(callback: CallbackQuery, state: FSMContext) -> None:
     """

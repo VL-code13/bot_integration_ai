@@ -15,9 +15,8 @@ from aiogram.types import (
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
+
 # Вспомогательные функции
-# ---------------------------------------------------------------------------
 # Читаемые названия неподдерживаемых типов для сообщения пользователю
 UNSUPPORTED_TYPES: dict[str, str] = {
     'voice': '🎤 голосовое сообщение',
@@ -31,7 +30,7 @@ UNSUPPORTED_TYPES: dict[str, str] = {
 }
 
 
-async def _download_photo_as_base64(message: Message) -> str | None:
+async def download_photo_as_base64(message: Message) -> str | None:
     """
     Скачивает фото из сообщения и возвращает его в формате base64.
 
@@ -52,7 +51,7 @@ async def _download_photo_as_base64(message: Message) -> str | None:
         return None
 
 
-def _get_unsupported_type_name(message:Message) -> str:
+def get_unsupported_type_name(message:Message) -> str:
     """
     Определяет тип неподдерживаемого контента из сообщения.
 
@@ -66,7 +65,7 @@ def _get_unsupported_type_name(message:Message) -> str:
     return UNSUPPORTED_TYPES.get(content_type, f'тип «{content_type}»')
 
 
-async def _update_history(
+async def update_history(
         state: FSMContext,
         user_content: str,
         assistant_response: str,

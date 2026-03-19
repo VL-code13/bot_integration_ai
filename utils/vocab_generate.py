@@ -10,8 +10,8 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
 async def generate_word(
-    language: str = 'английский',
-    used_words: list[str] | None = None
+        language: str = 'английский',
+        used_words: list[str] | None = None
 ) -> dict | None:
     """
     Генерирует новое иностранное слово с переводом и примерами через ChatGPT.
@@ -65,9 +65,9 @@ async def generate_word(
 
 
 async def check_translation(
-    word: str,
-    user_answer: str,
-    correct_translation: str
+        word: str,
+        user_answer: str,
+        correct_translation: str
 ) -> tuple[bool, str]:
     """
     Проверяет правильность перевода слова через ChatGPT.
@@ -98,7 +98,7 @@ async def check_translation(
 
     try:
         response = await client.chat.completions.create(
-            model='gpt-4o-mini',
+            model=MODEL,
             messages=[{'role': 'user', 'content': prompt}],
             temperature=0
         )

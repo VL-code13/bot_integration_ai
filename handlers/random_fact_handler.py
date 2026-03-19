@@ -11,8 +11,21 @@ from prompts import RANDOM_FACT
 router = Router()
 logger = logging.getLogger(__name__)
 
+@router.message(Command('random'))
+async def cmd_random(message: Message):
+    """Реализует старт случайного факта"""
+    try:
+        await send_random_fact(message)
+    except Exception as e:
+        logger.error(f"Ошибка в cmd_random: {e}")
+        await message.answer(
+            "Произошла ошибка при получении факта. Попробуйте позже.",
+            reply_markup=main_menu()
+        )
+
 
 async def send_random_fact(message: Message):
+    """Реализует отправку случайного факта"""
     await message.bot.send_chat_action(
         chat_id=message.chat.id,
         action=ChatAction.TYPING
@@ -42,19 +55,11 @@ async def send_random_fact(message: Message):
             'Произошла ошибка при получении факта.',
             reply_markup=random_keyboard()
         )
-@router.message(Command('random'))
-async def cmd_random(message: Message):
-    try:
-        await send_random_fact(message)
-    except Exception as e:
-        logger.error(f"Ошибка в cmd_random: {e}")
-        await message.answer(
-            "Произошла ошибка при получении факта. Попробуйте позже.",
-            reply_markup=main_menu()
-        )
+
 
 @router.callback_query(F.data == 'random:again')
 async def cmd_random_again(callback: CallbackQuery):
+    """Реализует еще случайный факт"""
     try:
         await callback.answer()  # Снимаем индикатор загрузки
         await send_random_fact(callback.message)
@@ -71,6 +76,7 @@ async def cmd_random_again(callback: CallbackQuery):
 
 @router.callback_query(F.data == 'random:stop')
 async def cmd_random_stop(callback: CallbackQuery):
+    """Завершает режим случайного факта"""
     try:
         await callback.answer()
         await callback.message.delete()
