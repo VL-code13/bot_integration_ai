@@ -3,7 +3,7 @@ import logging
 
 from openai import AsyncOpenAI
 
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, MODEL
 
 logger = logging.getLogger(__name__)
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -49,9 +49,10 @@ async def generate_word(
 
     try:
         response = await client.chat.completions.create(
-            model='gpt-4o-mini',
+            model=MODEL,
             messages=[{'role': 'user', 'content': prompt}],
-            temperature=0.7
+            max_tokens=1000,
+            temperature=0.8
         )
         content = response.choices[0].message.content.strip()
         return json.loads(content)

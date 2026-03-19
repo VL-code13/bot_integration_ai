@@ -11,7 +11,7 @@ from handlers.talk import cmd_talk
 from handlers.vocab_handler import cmd_vocab
 from keyboards.inline import main_menu
 from handlers.random_fact_handler import send_random_fact
-
+from handlers.resume_handler import cmd_resume
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -51,6 +51,8 @@ async def cmd_help(message: Message) -> None:
             '/talk — Диалог с известной личностью\n'
             '/quiz — Викторина с подсчётом баллов\n'
             '/vocab — Словарный тренажёр\n',
+            '/resume — Помощь с составлением резюме\n',
+
             parse_mode='html'
         )
     except Exception as e:
@@ -132,3 +134,20 @@ async def on_menu_vocab(callback: CallbackQuery, state: FSMContext) -> None:
     except Exception as e:
         logger.error(f'Ошибка в on_menu_vocab: {e}')
         await callback.answer('Произошла ошибка.', show_alert=True)
+
+
+@router.callback_query(F.data == 'menu:resume')
+async def on_menu_resume(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+    Обрабатывает нажатие кнопки 'Помощь с резюме' в главном меню.
+    Передаёт управление обработчику команды /resume.
+    """
+    try:
+        await callback.answer()
+        await cmd_resume(callback.message, state)
+    except Exception as e:
+        logger.error(f'Ошибка в on_menu_resume: {e}')
+        await callback.answer(
+            'Произошла ошибка. Используйте /resume.',
+            show_alert=True
+        )
