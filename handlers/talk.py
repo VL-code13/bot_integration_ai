@@ -25,7 +25,7 @@ async def cmd_talk(message: Message, state: FSMContext):
                                    caption=(
                                        '<b>Диалог с известной личностью</b>\n\nВыбери с кем хочешь поговорить:'
                                    ), reply_markup=persons_keyboard(PERSONS), parse_mode='html')
-    except Exception as e:
+    except Exception:
         await message.answer(text='<b>Диалог с известной личностью</b>\n\nВыбери с кем хочешь поговорить:',
                              reply_markup=persons_keyboard(PERSONS))
 
@@ -60,7 +60,7 @@ async def change_person(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.callback_query(TalkStates.chatting, F.data=='talk:stop')
+@router.callback_query(TalkStates.chatting, F.data == 'talk:stop')
 async def stop_talking(callback: CallbackQuery, state: FSMContext):
     """Реализует завершение диалога с известной личностью"""
     try:
@@ -86,10 +86,12 @@ async def stop_talking(callback: CallbackQuery, state: FSMContext):
                 'Произошла критическая ошибка. Используйте /start для возврата в меню.',
                 show_alert=True
             )
-@router.callback_query(TalkStates.choosing_person, F.data=='talk:cancel')
+
+
+@router.callback_query(TalkStates.choosing_person, F.data == 'talk:cancel')
 async def cancel_talk(callback: CallbackQuery, state: FSMContext):
     """Реализует отмену диалога"""
-    await stop_talking(callback,state)
+    await stop_talking(callback, state)
 
 
 @router.message(TalkStates.chatting, F.text)
@@ -108,7 +110,8 @@ async def cmd_talk_message(message: Message, state: FSMContext):
 
     await message.bot.send_chat_action(
         chat_id=message.chat.id,
-        action=ChatAction.TYPING)
+        action=ChatAction.TYPING
+    )
 
     history.append({'role': 'user', 'content': message.text})
 

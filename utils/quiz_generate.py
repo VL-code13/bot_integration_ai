@@ -34,9 +34,8 @@ async def check_answer(question: str, user_answer: str) -> tuple[bool, str]:
         'Первая строка: только слово ВЕРНО или только слово НЕВЕРНО.\n'
         'Вторая строка и далее: краткое объяснение (1-2 предложения),'
         ' и если ответ неверный - укажи правильный ответ.'
-
     )
-    response =  await ask_gpt(user_message=prompt)
+    response = await ask_gpt(user_message=prompt)
 
     lines = response.strip().split('\n')
     first_line = lines[0].strip().upper()
@@ -58,7 +57,7 @@ async def send_next_question(message: Message, state: FSMContext, topic_key: str
     )
 
     question = await generate_answer(topic_key=topic_key, TOPICS=TOPICS)
-    await state.update_data(current_question = question)
+    await state.update_data(current_question=question)
     data = await state.get_data()
     score = data.get('score', 0)
     total = data.get('total', 0)
@@ -68,4 +67,3 @@ async def send_next_question(message: Message, state: FSMContext, topic_key: str
         f'Счет <b>{score}/{total}</b> | Тема <b>{escape(topic_name)}</b>\n\n'
         f'<b>Вопрос</b>\n{escape(question)}'
     )
-

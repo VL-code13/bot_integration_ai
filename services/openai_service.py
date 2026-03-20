@@ -6,11 +6,7 @@ from aiogram.fsm.context import FSMContext
 from openai import AsyncOpenAI
 
 from config import OPENAI_API_KEY, MODEL
-from aiogram.types import (
-    CallbackQuery,
-    FSInputFile,
-    Message,
-)
+from aiogram.types import Message
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 logger = logging.getLogger(__name__)
@@ -51,7 +47,7 @@ async def download_photo_as_base64(message: Message) -> str | None:
         return None
 
 
-def get_unsupported_type_name(message:Message) -> str:
+def get_unsupported_type_name(message: Message) -> str:
     """
     Определяет тип неподдерживаемого контента из сообщения.
 

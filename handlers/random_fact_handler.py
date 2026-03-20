@@ -8,8 +8,10 @@ from services.openai_service import ask_gpt
 from keyboards.inline import random_keyboard, main_menu
 
 from prompts import RANDOM_FACT
+
 router = Router()
 logger = logging.getLogger(__name__)
+
 
 @router.message(Command('random'))
 async def cmd_random(message: Message):
@@ -73,6 +75,7 @@ async def cmd_random_again(callback: CallbackQuery):
             "Ошибка загрузки факта",
             show_alert=True
         )
+
 
 @router.callback_query(F.data == 'random:stop')
 async def cmd_random_stop(callback: CallbackQuery):

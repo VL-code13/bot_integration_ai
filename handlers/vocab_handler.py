@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_LANGUAGE = 'английский'
 
+
 @router.message(Command('vocab'))
 async def cmd_vocab(message: Message, state: FSMContext) -> None:
     """Запуск словарного тренажёра командой /vocab."""

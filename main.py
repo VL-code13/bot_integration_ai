@@ -6,6 +6,7 @@ from config import TELEGRAM_BOT_TOKEN
 from handlers import router
 from logger import logger
 
+
 async def main():
     bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode='html'))
     dp = Dispatcher()

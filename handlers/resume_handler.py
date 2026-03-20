@@ -30,9 +30,7 @@ from prompts import RESUME_SYSTEM_PROMPT, IMPROVE_PROMPT
 router = Router()
 logger = logging.getLogger(__name__)
 
-
 _ANY_RESUME_STATE = StateFilter(ResumeStates)
-
 
 
 # Вспомогательные функции
@@ -177,7 +175,6 @@ async def cmd_resume(message: Message, state: FSMContext) -> None:
         await message.answer('Произошла ошибка. Попробуйте /resume ещё раз.')
 
 
-
 # Шаги сбора данных
 
 
@@ -278,7 +275,6 @@ async def handle_additional(message: Message, state: FSMContext) -> None:
             '❌ Ошибка при генерации. Попробуйте позже.',
             reply_markup=cancel_keyboard()
         )
-
 
 
 # Callback-кнопки
@@ -394,7 +390,6 @@ async def handle_cancel(
     except Exception as e:
         logger.error(f'Ошибка в handle_cancel: {e}')
         await callback.answer('❌ Ошибка при отмене.', show_alert=True)
-
 
 
 # Заглушка для нетекстовых сообщений

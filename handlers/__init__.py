@@ -12,4 +12,4 @@ from handlers.resume_handler import router as resume_router
 router = Router()
 
 # Подключаем все роутеры к основному.
-router.include_routers(commands_router, random_fact_router, gpt_router, talk_router, quiz_router, vocab_router,resume_router)
+router.include_routers(commands_router, random_fact_router, gpt_router, talk_router, quiz_router, vocab_router, resume_router)

@@ -31,7 +31,7 @@ def skip_or_cancel_keyboard() -> InlineKeyboardMarkup:
     """
     builder = InlineKeyboardBuilder()
     builder.button(text='⏭ Пропустить', callback_data='resume:skip')
-    builder.button(text='❌ Отмена',     callback_data='resume:cancel')
+    builder.button(text='❌ Отмена', callback_data='resume:cancel')
     # adjust: https://docs.aiogram.dev/en/latest/utils/keyboard.html
     builder.adjust(2)
     return builder.as_markup()
@@ -50,9 +50,9 @@ def resume_result_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardMarkup с тремя кнопками (2 + 1).
     """
     builder = InlineKeyboardBuilder()
-    builder.button(text='✨ Улучшить',      callback_data='resume:improve')
+    builder.button(text='✨ Улучшить', callback_data='resume:improve')
     builder.button(text='🔄 Начать заново', callback_data='resume:restart')
-    builder.button(text='🏠 В меню',        callback_data='resume:cancel')
+    builder.button(text='🏠 В меню', callback_data='resume:cancel')
     # Первые две рядом, третья на отдельной строке
     builder.adjust(2, 1)
     return builder.as_markup()

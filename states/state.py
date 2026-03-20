@@ -1,6 +1,8 @@
 from aiogram.fsm.state import State, StatesGroup
 
 # https://docs.aiogram.dev/en/latest/dispatcher/finite_state_machine/index.html
+
+
 class GptStates(StatesGroup):
     chatting = State()
 
@@ -16,10 +18,12 @@ class QuizStates(StatesGroup):
     choosing_topic = State()
     answering = State()
 
+
 class VocabStates(StatesGroup):
     '''Состояние для словарного тренажера'''
     learning = State()   # режим изучения слов
     training = State()   # режим тренировки
+
 
 class ResumeStates(StatesGroup):
     """

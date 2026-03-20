@@ -20,12 +20,12 @@ def main_menu() -> InlineKeyboardMarkup:
         InlineKeyboardMarkup с кнопками всех разделов.
     """
     builder = InlineKeyboardBuilder()
-    builder.button(text='🎲 Случайный факт',     callback_data='menu:random')
-    builder.button(text='🤖 Chat GPT',           callback_data='menu:gpt')
+    builder.button(text='🎲 Случайный факт', callback_data='menu:random')
+    builder.button(text='🤖 Chat GPT', callback_data='menu:gpt')
     builder.button(text='🗣️ Диалог с личностью', callback_data='menu:talk')
-    builder.button(text='🎯 Викторина',           callback_data='menu:quiz')
+    builder.button(text='🎯 Викторина', callback_data='menu:quiz')
     builder.button(text='🆎 Словарный тренажёр', callback_data='menu:vocab')
-    builder.button(text='📄 Помощь с резюме',    callback_data='menu:resume')
+    builder.button(text='📄 Помощь с резюме', callback_data='menu:resume')
     # Одна кнопка на строку
     builder.adjust(1)
     return builder.as_markup()
@@ -40,7 +40,7 @@ def random_keyboard() -> InlineKeyboardMarkup:
     """
     builder = InlineKeyboardBuilder()
     builder.button(text='🎲 Хочу ещё факт', callback_data='random:again')
-    builder.button(text='⛔️ Закончить',     callback_data='random:stop')
+    builder.button(text='⛔️ Закончить', callback_data='random:stop')
     builder.adjust(1)
     return builder.as_markup()
 
@@ -88,7 +88,7 @@ def talk_keyboard() -> InlineKeyboardMarkup:
     """
     builder = InlineKeyboardBuilder()
     builder.button(text='🔄 Сменить собеседника', callback_data='talk:change')
-    builder.button(text='⛔️ Закончить',           callback_data='talk:stop')
+    builder.button(text='⛔️ Закончить', callback_data='talk:stop')
     builder.adjust(1)
     return builder.as_markup()
 
@@ -123,8 +123,8 @@ def get_quiz_actions_keyboard() -> InlineKeyboardMarkup:
         «Сменить тему» и «Закончить».
     """
     builder = InlineKeyboardBuilder()
-    builder.button(text='▶️ Следующий вопрос',   callback_data='quiz:next')
-    builder.button(text='🔄 Сменить тему',        callback_data='quiz:change_topic')
+    builder.button(text='▶️ Следующий вопрос', callback_data='quiz:next')
+    builder.button(text='🔄 Сменить тему', callback_data='quiz:change_topic')
     builder.button(text='🛑 Закончить викторину', callback_data='quiz:stop')
     builder.adjust(1)
     return builder.as_markup()
@@ -151,4 +151,3 @@ def vocab_actions_keyboard(has_words: bool = False) -> InlineKeyboardMarkup:
     builder.button(text='❌ Закончить', callback_data='vocab:stop')
     builder.adjust(1)
     return builder.as_markup()
-
