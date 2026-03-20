@@ -2,10 +2,10 @@
 Обработчик функции «Помощь с резюме».
 
 FSM States docs:
-https://docs.aiogram.dev/en/latest/dispatcher/finite_state_machine/index.html
+    https://docs.aiogram.dev/en/latest/dispatcher/finite_state_machine/index.html
 
 StateFilter docs:
-https://docs.aiogram.dev/en/latest/filters/state.html
+    https://docs.aiogram.dev/en/latest/filters/state.html
 """
 import logging
 from html import escape
@@ -33,28 +33,31 @@ logger = logging.getLogger(__name__)
 _ANY_RESUME_STATE = StateFilter(ResumeStates)
 
 
-# Вспомогательные функции
-
-
 def _build_resume_prompt(data: dict[str, Any]) -> str:
     """
     Формирует промпт для ChatGPT на основе собранных данных.
 
     Args:
-        data: словарь FSM-данных с ключами name, position,
+        data: Словарь FSM-данных с ключами name, position,
               education, experience, skills, additional.
 
     Returns:
         Готовый промпт для отправки в ChatGPT.
     """
     additional = data.get('additional') or 'не указано'
+    name = data.get('name', 'Не указано')
+    position = data.get('position', 'Не указано')
+    education = data.get('education', 'Не указано')
+    experience = data.get('experience', 'Не указано')
+    skills = data.get('skills', 'Не указано')
+
     return (
         'Создай профессиональное резюме на основе следующих данных:\n\n'
-        f'👤 ФИО: {data["name"]}\n'
-        f'💼 Желаемая должность: {data["position"]}\n'
-        f'🎓 Образование: {data["education"]}\n'
-        f'📋 Опыт работы: {data["experience"]}\n'
-        f'🛠 Навыки: {data["skills"]}\n'
+        f'👤 ФИО: {name}\n'
+        f'💼 Желаемая должность: {position}\n'
+        f'🎓 Образование: {education}\n'
+        f'📋 Опыт работы: {experience}\n'
+        f'🛠 Навыки: {skills}\n'
         f'📝 Дополнительно: {additional}\n\n'
         'Оформи резюме с чёткой структурой разделов. '
         'Текст должен убедительно представлять кандидата работодателю.'
@@ -64,17 +67,19 @@ def _build_resume_prompt(data: dict[str, Any]) -> str:
 def _split_text(text: str, limit: int = 4096) -> list[str]:
     """
     Разбивает длинный текст на части не более limit символов.
+
     Старается делать разрыв по символу новой строки.
 
-    Docs Telegram message limit:
-    https://core.telegram.org/bots/api#sendmessage
-
     Args:
-        text: исходный текст.
-        limit: максимальная длина одного блока.
+        text: Исходный текст.
+        limit: Максимальная длина одного блока (по умолчанию 4096).
 
     Returns:
         Список строковых блоков.
+
+    Note:
+        Telegram ограничивает длину сообщения 4096 символами.
+        https://core.telegram.org/bots/api#sendmessage
     """
     if len(text) <= limit:
         return [text]
@@ -93,19 +98,20 @@ def _split_text(text: str, limit: int = 4096) -> list[str]:
 
 
 async def _generate_and_send_resume(
-        message: Message,
-        state: FSMContext
+    message: Message,
+    state: FSMContext
 ) -> None:
     """
     Генерирует резюме через ChatGPT и отправляет пользователю.
+
     Сохраняет результат в FSM для последующего улучшения.
 
-    Docs send_chat_action:
-    https://core.telegram.org/bots/api#sendchataction
-
     Args:
-        message: объект сообщения для ответа.
-        state: контекст FSM с данными пользователя.
+        message: Объект сообщения для ответа.
+        state: Контекст FSM с данными пользователя.
+
+    Raises:
+        Exception: При ошибке генерации или отправки сообщения.
     """
     wait_msg = await message.answer('⏳ Генерирую резюме, подождите...')
     try:
@@ -137,7 +143,7 @@ async def _generate_and_send_resume(
             await message.answer(chunk, reply_markup=kb, parse_mode='html')
 
     except Exception as e:
-        logger.error(f'Ошибка генерации резюме: {e}')
+        logger.error('Ошибка генерации резюме: %s', e)
         try:
             await wait_msg.delete()
         except Exception:
@@ -155,10 +161,15 @@ async def _generate_and_send_resume(
 async def cmd_resume(message: Message, state: FSMContext) -> None:
     """
     Обрабатывает команду /resume.
+
     Сбрасывает предыдущее состояние и запускает сбор данных с шага 1.
 
-    Docs:
-    https://docs.aiogram.dev/en/latest/filters/command.html
+    Args:
+        message: Объект сообщения с командой.
+        state: Контекст FSM для управления состоянием.
+
+    See Also:
+        https://docs.aiogram.dev/en/latest/filters/command.html
     """
     try:
         await state.clear()
@@ -171,7 +182,7 @@ async def cmd_resume(message: Message, state: FSMContext) -> None:
             parse_mode='html'
         )
     except Exception as e:
-        logger.error(f'Ошибка в cmd_resume: {e}')
+        logger.error('Ошибка в cmd_resume: %s', e)
         await message.answer('Произошла ошибка. Попробуйте /resume ещё раз.')
 
 
@@ -180,7 +191,13 @@ async def cmd_resume(message: Message, state: FSMContext) -> None:
 
 @router.message(ResumeStates.waiting_name, F.text)
 async def handle_name(message: Message, state: FSMContext) -> None:
-    """Принимает ФИО и переходит к вопросу о должности."""
+    """
+    Принимает ФИО и переходит к вопросу о должности.
+
+    Args:
+        message: Объект сообщения с текстом ФИО.
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await state.update_data(name=message.text.strip())
         await state.set_state(ResumeStates.waiting_position)
@@ -190,13 +207,19 @@ async def handle_name(message: Message, state: FSMContext) -> None:
             parse_mode='html'
         )
     except Exception as e:
-        logger.error(f'Ошибка в handle_name: {e}')
+        logger.error('Ошибка в handle_name: %s', e)
         await message.answer('Ошибка. Введи ФИО ещё раз.')
 
 
 @router.message(ResumeStates.waiting_position, F.text)
 async def handle_position(message: Message, state: FSMContext) -> None:
-    """Принимает должность и переходит к вопросу об образовании."""
+    """
+    Принимает должность и переходит к вопросу об образовании.
+
+    Args:
+        message: Объект сообщения с текстом должности.
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await state.update_data(position=message.text.strip())
         await state.set_state(ResumeStates.waiting_education)
@@ -207,13 +230,19 @@ async def handle_position(message: Message, state: FSMContext) -> None:
             parse_mode='html'
         )
     except Exception as e:
-        logger.error(f'Ошибка в handle_position: {e}')
+        logger.error('Ошибка в handle_position: %s', e)
         await message.answer('Ошибка. Введи должность ещё раз.')
 
 
 @router.message(ResumeStates.waiting_education, F.text)
 async def handle_education(message: Message, state: FSMContext) -> None:
-    """Принимает образование и переходит к вопросу об опыте работы."""
+    """
+    Принимает образование и переходит к вопросу об опыте работы.
+
+    Args:
+        message: Объект сообщения с текстом об образовании.
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await state.update_data(education=message.text.strip())
         await state.set_state(ResumeStates.waiting_experience)
@@ -225,13 +254,19 @@ async def handle_education(message: Message, state: FSMContext) -> None:
             parse_mode='html'
         )
     except Exception as e:
-        logger.error(f'Ошибка в handle_education: {e}')
+        logger.error('Ошибка в handle_education: %s', e)
         await message.answer('Ошибка. Введи образование ещё раз.')
 
 
 @router.message(ResumeStates.waiting_experience, F.text)
 async def handle_experience(message: Message, state: FSMContext) -> None:
-    """Принимает опыт работы и переходит к вопросу о навыках."""
+    """
+    Принимает опыт работы и переходит к вопросу о навыках.
+
+    Args:
+        message: Объект сообщения с текстом об опыте работы.
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await state.update_data(experience=message.text.strip())
         await state.set_state(ResumeStates.waiting_skills)
@@ -242,13 +277,19 @@ async def handle_experience(message: Message, state: FSMContext) -> None:
             parse_mode='html'
         )
     except Exception as e:
-        logger.error(f'Ошибка в handle_experience: {e}')
+        logger.error('Ошибка в handle_experience: %s', e)
         await message.answer('Ошибка. Введи опыт работы ещё раз.')
 
 
 @router.message(ResumeStates.waiting_skills, F.text)
 async def handle_skills(message: Message, state: FSMContext) -> None:
-    """Принимает навыки и переходит к необязательному шагу."""
+    """
+    Принимает навыки и переходит к необязательному шагу.
+
+    Args:
+        message: Объект сообщения с текстом о навыках.
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await state.update_data(skills=message.text.strip())
         await state.set_state(ResumeStates.waiting_additional)
@@ -259,18 +300,24 @@ async def handle_skills(message: Message, state: FSMContext) -> None:
             parse_mode='html'
         )
     except Exception as e:
-        logger.error(f'Ошибка в handle_skills: {e}')
+        logger.error('Ошибка в handle_skills: %s', e)
         await message.answer('Ошибка. Введи навыки ещё раз.')
 
 
 @router.message(ResumeStates.waiting_additional, F.text)
 async def handle_additional(message: Message, state: FSMContext) -> None:
-    """Принимает дополнительную информацию и запускает генерацию."""
+    """
+    Принимает дополнительную информацию и запускает генерацию.
+
+    Args:
+        message: Объект сообщения с дополнительной информацией.
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await state.update_data(additional=message.text.strip())
         await _generate_and_send_resume(message, state)
     except Exception as e:
-        logger.error(f'Ошибка в handle_additional: {e}')
+        logger.error('Ошибка в handle_additional: %s', e)
         await message.answer(
             '❌ Ошибка при генерации. Попробуйте позже.',
             reply_markup=cancel_keyboard()
@@ -278,21 +325,29 @@ async def handle_additional(message: Message, state: FSMContext) -> None:
 
 
 # Callback-кнопки
+
+
 @router.callback_query(
     StateFilter(ResumeStates.waiting_additional),
     F.data == 'resume:skip'
 )
 async def handle_skip_additional(
-        callback: CallbackQuery,
-        state: FSMContext
+    callback: CallbackQuery,
+    state: FSMContext
 ) -> None:
-    """Пропускает необязательный шаг и сразу генерирует резюме."""
+    """
+    Пропускает необязательный шаг и сразу генерирует резюме.
+
+    Args:
+        callback: Объект callback-запроса от кнопки «Пропустить».
+        state: Контекст FSM для сохранения данных.
+    """
     try:
         await callback.answer()
         await state.update_data(additional=None)
         await _generate_and_send_resume(callback.message, state)
     except Exception as e:
-        logger.error(f'Ошибка в handle_skip_additional: {e}')
+        logger.error('Ошибка в handle_skip_additional: %s', e)
         await callback.answer('❌ Ошибка при генерации резюме.', show_alert=True)
 
 
@@ -301,12 +356,20 @@ async def handle_skip_additional(
     F.data == 'resume:improve'
 )
 async def handle_improve(
-        callback: CallbackQuery,
-        state: FSMContext
+    callback: CallbackQuery,
+    state: FSMContext
 ) -> None:
     """
     Улучшает уже сгенерированное резюме через ChatGPT.
+
     Использует сохранённый текст из FSM-состояния.
+
+    Args:
+        callback: Объект callback-запроса от кнопки «Улучшить».
+        state: Контекст FSM с сохранённым резюме.
+
+    Note:
+        Если резюме не найдено, состояние сбрасывается.
     """
     try:
         await callback.answer()
@@ -314,7 +377,8 @@ async def handle_improve(
         last_resume = data.get('last_resume', '')
 
         if not last_resume:
-            await callback.answer('Резюме не найдено. Начни заново.', show_alert=True)
+            await state.clear()
+            await callback.answer('Резюме не найдено. Начни заново /resume.', show_alert=True)
             return
 
         await callback.message.bot.send_chat_action(
@@ -322,7 +386,6 @@ async def handle_improve(
             action=ChatAction.TYPING
         )
 
-        # ✅ ИСПРАВЛЕНО: была строка 'IMPROVE_PROMPT' вместо переменной
         improve_prompt = f'{IMPROVE_PROMPT}\n\n{last_resume}'
 
         improved = await ask_gpt(
@@ -340,7 +403,7 @@ async def handle_improve(
             await callback.message.answer(chunk, reply_markup=kb, parse_mode='html')
 
     except Exception as e:
-        logger.error(f'Ошибка в handle_improve: {e}')
+        logger.error('Ошибка в handle_improve: %s', e)
         await callback.answer('❌ Ошибка при улучшении.', show_alert=True)
 
 
@@ -349,32 +412,41 @@ async def handle_improve(
     F.data == 'resume:restart'
 )
 async def handle_restart(
-        callback: CallbackQuery,
-        state: FSMContext
+    callback: CallbackQuery,
+    state: FSMContext
 ) -> None:
-    """Сбрасывает данные и перезапускает сбор информации с шага 1."""
+    """
+    Сбрасывает данные и перезапускает сбор информации с шага 1.
+
+    Args:
+        callback: Объект callback-запроса от кнопки «Начать заново».
+        state: Контекст FSM для сброса данных.
+    """
     try:
         await callback.answer()
         await cmd_resume(callback.message, state)
     except Exception as e:
-        logger.error(f'Ошибка в handle_restart: {e}')
+        logger.error('Ошибка в handle_restart: %s', e)
         await callback.answer('❌ Ошибка перезапуска.', show_alert=True)
 
 
-#  явный StateFilter(ResumeStates)
 @router.callback_query(
     _ANY_RESUME_STATE,
     F.data == 'resume:cancel'
 )
 async def handle_cancel(
-        callback: CallbackQuery,
-        state: FSMContext
+    callback: CallbackQuery,
+    state: FSMContext
 ) -> None:
     """
     Отменяет режим резюме из любого состояния и возвращает в главное меню.
 
-    Docs StateFilter:
-    https://docs.aiogram.dev/en/latest/filters/state.html#statefilter
+    Args:
+        callback: Объект callback-запроса от кнопки «Отмена».
+        state: Контекст FSM для сброса состояния.
+
+    See Also:
+        https://docs.aiogram.dev/en/latest/filters/state.html#statefilter
     """
     try:
         await state.clear()
@@ -388,24 +460,28 @@ async def handle_cancel(
             reply_markup=main_menu()
         )
     except Exception as e:
-        logger.error(f'Ошибка в handle_cancel: {e}')
+        logger.error('Ошибка в handle_cancel: %s', e)
         await callback.answer('❌ Ошибка при отмене.', show_alert=True)
 
 
 # Заглушка для нетекстовых сообщений
 
 
-# StateFilter(ResumeStates) — все состояния группы, кроме showing_result
-# (там пользователь уже не вводит текст)
 @router.message(StateFilter(ResumeStates))
 async def handle_unsupported(message: Message) -> None:
     """
-    Перехватывает нетекстовые сообщения (фото, стикеры, голос и т.д.)
-    в режиме резюме и просит ввести текст.
+    Перехватывает нетекстовые сообщения в режиме резюме.
+
+    Обрабатывает фото, стикеры, голосовые и другие неподдерживаемые типы,
+    предлагая пользователю отправить текст.
+
+    Args:
+        message: Объект сообщения с неподдерживаемым типом контента.
     """
     logger.info(
-        f'Пользователь {message.from_user.id} отправил '
-        f'{message.content_type} в режиме резюме.'
+        'Пользователь %s отправил %s в режиме резюме.',
+        message.from_user.id,
+        message.content_type
     )
     await message.answer(
         '⚠️ Пожалуйста, отвечай <b>текстом</b> — '
